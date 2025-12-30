@@ -1,0 +1,6 @@
+@ECanopy_HostAddress = http://localhost:5138
+
+GET {{ECanopy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

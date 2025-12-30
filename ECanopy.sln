@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36804.6 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECanopy", "ECanopy\ECanopy.csproj", "{EDF12ACC-5088-48B6-8D11-16390C127359}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EDF12ACC-5088-48B6-8D11-16390C127359}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDF12ACC-5088-48B6-8D11-16390C127359}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDF12ACC-5088-48B6-8D11-16390C127359}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDF12ACC-5088-48B6-8D11-16390C127359}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {20AB71E6-F765-4881-BB71-34D32DFCD503}
+	EndGlobalSection
+EndGlobal
