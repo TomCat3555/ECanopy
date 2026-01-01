@@ -19,13 +19,15 @@ namespace ECanopy.Data
 
         public DbSet<MaintainanceBill> MaintainanceBills { get; set; }
         public DbSet<Payment> Payments { get; set; }
-        public DbSet<Complaint> Complaints { get; set; }
         public DbSet<Notice> Notices { get; set; }
 
         public DbSet<ResidentJoinRequest> ResidentJoinRequests { get; set; }
         public DbSet<RwaMember> RwaMembers { get; set; }
         public DbSet<RoleRequest> RoleRequests { get; set; }
 
+        public DbSet<Complaint> Complaints { get; set; } = null!;
+        public DbSet<ComplaintComments> ComplaintComments { get; set; } = null!;
+        public DbSet<ComplaintAttachment> ComplaintAttachments { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
