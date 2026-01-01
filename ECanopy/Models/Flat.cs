@@ -13,6 +13,7 @@ namespace ECanopy.Models
         [ForeignKey(nameof(BuildingId))]
         public Building Building { get; set; }
         [Required]
+        [RegularExpression(@"^[A-Z0-9\-]{1,10}$",ErrorMessage = "Invalid flat number")]
         public string FlatNumber { get; set; }
         public ICollection<Resident> Residents { get; set; }
         public ICollection<ResidentJoinRequest> JoinRequests { get; set; }
