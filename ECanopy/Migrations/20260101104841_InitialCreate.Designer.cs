@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECanopy.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251228194014_SyncRwaMemberSocietyIdNullable")]
-    partial class SyncRwaMemberSocietyIdNullable
+    [Migration("20260101104841_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -95,11 +95,11 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.Building", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("BuildingId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("BuildingId"));
 
                     b.Property<string>("BuildingName")
                         .IsRequired()
@@ -108,7 +108,7 @@ namespace ECanopy.Migrations
                     b.Property<int>("SocietyId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("BuildingId");
 
                     b.HasIndex("SocietyId");
 
@@ -117,44 +117,141 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.Complaint", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ComplaintId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ComplaintId"));
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<int?>("AssignedTo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
+
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
-                    b.Property<int>("ResidentId")
-                        .HasColumnType("int");
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
-                    b.Property<string>("Title")
+                    b.Property<string>("TicketNumber")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
-                    b.HasKey("Id");
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("datetime(6)");
 
-                    b.HasIndex("ResidentId");
+                    b.HasKey("ComplaintId");
+
+                    b.HasIndex("TicketNumber")
+                        .IsUnique();
 
                     b.ToTable("Complaints");
                 });
 
-            modelBuilder.Entity("ECanopy.Models.Flat", b =>
+            modelBuilder.Entity("ECanopy.Models.ComplaintAttachment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("AttachmentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AttachmentId"));
+
+                    b.Property<int>("ComplaintId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UploadedOn")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("AttachmentId");
+
+                    b.HasIndex("ComplaintId");
+
+                    b.ToTable("ComplaintAttachments");
+                });
+
+            modelBuilder.Entity("ECanopy.Models.ComplaintComments", b =>
+                {
+                    b.Property<int>("CommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("CommentId"));
+
+                    b.Property<string>("CommentText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("CommentedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CommentedOn")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ComplaintId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CommentId");
+
+                    b.HasIndex("ComplaintId");
+
+                    b.ToTable("ComplaintComments");
+                });
+
+            modelBuilder.Entity("ECanopy.Models.Flat", b =>
+                {
+                    b.Property<int>("FlatId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("FlatId"));
 
                     b.Property<int>("BuildingId")
                         .HasColumnType("int");
@@ -169,7 +266,7 @@ namespace ECanopy.Migrations
                     b.Property<int>("MaxResident")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("FlatId");
 
                     b.HasIndex("BuildingId");
 
@@ -178,11 +275,11 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.MaintainanceBill", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("MaintainanceBillId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MaintainanceBillId"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(65,30)");
@@ -199,22 +296,22 @@ namespace ECanopy.Migrations
                     b.Property<int>("ResidentId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("MaintainanceBillId");
 
                     b.HasIndex("FlatId");
 
                     b.HasIndex("ResidentId");
 
-                    b.ToTable("MaintainanceBill");
+                    b.ToTable("MaintainanceBills");
                 });
 
             modelBuilder.Entity("ECanopy.Models.Notice", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("NoticeId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("NoticeId"));
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -230,18 +327,18 @@ namespace ECanopy.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.HasKey("NoticeId");
 
                     b.ToTable("Notices");
                 });
 
             modelBuilder.Entity("ECanopy.Models.Payment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("PaymentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PaymentId"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(65,30)");
@@ -259,7 +356,7 @@ namespace ECanopy.Migrations
                     b.Property<int>("ResidentId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("PaymentId");
 
                     b.HasIndex("MaintainanceBillId");
 
@@ -270,11 +367,11 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.Resident", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ResidentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ResidentId"));
 
                     b.Property<int>("FlatId")
                         .HasColumnType("int");
@@ -294,7 +391,7 @@ namespace ECanopy.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("Id");
+                    b.HasKey("ResidentId");
 
                     b.HasIndex("FlatId");
 
@@ -305,11 +402,11 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.ResidentJoinRequest", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ResidentJoinRequestId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ResidentJoinRequestId"));
 
                     b.Property<int>("FlatId")
                         .HasColumnType("int");
@@ -322,7 +419,7 @@ namespace ECanopy.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("Id");
+                    b.HasKey("ResidentJoinRequestId");
 
                     b.HasIndex("FlatId");
 
@@ -331,13 +428,53 @@ namespace ECanopy.Migrations
                     b.ToTable("ResidentJoinRequests");
                 });
 
-            modelBuilder.Entity("ECanopy.Models.RwaMember", b =>
+            modelBuilder.Entity("ECanopy.Models.RoleRequest", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("RoleRequestId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RoleRequestId"));
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RequestedRole")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SocietyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("RoleRequestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RoleRequests");
+                });
+
+            modelBuilder.Entity("ECanopy.Models.RwaMember", b =>
+                {
+                    b.Property<int>("RwaMemberId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RwaMemberId"));
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
@@ -353,11 +490,11 @@ namespace ECanopy.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("Id");
+                    b.HasKey("RwaMemberId");
 
                     b.HasIndex("SocietyId");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "SocietyId")
                         .IsUnique();
 
                     b.ToTable("RwaMembers");
@@ -365,11 +502,11 @@ namespace ECanopy.Migrations
 
             modelBuilder.Entity("ECanopy.Models.Society", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("SocietyId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SocietyId"));
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -387,7 +524,7 @@ namespace ECanopy.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("Id");
+                    b.HasKey("SocietyId");
 
                     b.ToTable("Societies");
                 });
@@ -535,15 +672,26 @@ namespace ECanopy.Migrations
                     b.Navigation("Society");
                 });
 
-            modelBuilder.Entity("ECanopy.Models.Complaint", b =>
+            modelBuilder.Entity("ECanopy.Models.ComplaintAttachment", b =>
                 {
-                    b.HasOne("ECanopy.Models.Resident", "Resident")
-                        .WithMany()
-                        .HasForeignKey("ResidentId")
+                    b.HasOne("ECanopy.Models.Complaint", "Complaint")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ComplaintId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Resident");
+                    b.Navigation("Complaint");
+                });
+
+            modelBuilder.Entity("ECanopy.Models.ComplaintComments", b =>
+                {
+                    b.HasOne("ECanopy.Models.Complaint", "Complaint")
+                        .WithMany("Comments")
+                        .HasForeignKey("ComplaintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Complaint");
                 });
 
             modelBuilder.Entity("ECanopy.Models.Flat", b =>
@@ -633,6 +781,17 @@ namespace ECanopy.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ECanopy.Models.RoleRequest", b =>
+                {
+                    b.HasOne("ECanopy.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ECanopy.Models.RwaMember", b =>
                 {
                     b.HasOne("ECanopy.Models.Society", "Society")
@@ -711,6 +870,13 @@ namespace ECanopy.Migrations
             modelBuilder.Entity("ECanopy.Models.Building", b =>
                 {
                     b.Navigation("Flats");
+                });
+
+            modelBuilder.Entity("ECanopy.Models.Complaint", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("ECanopy.Models.Flat", b =>

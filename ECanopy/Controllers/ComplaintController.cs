@@ -80,6 +80,7 @@ namespace ECanopy.Controllers
         }
 
         // PUT: api/complaints/{id}/status - Update complaint status
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<ActionResult<ComplaintResponseDto>> UpdateStatus(int id, [FromBody] string status)
         {
@@ -113,6 +114,7 @@ namespace ECanopy.Controllers
 
 
         // DELETE: api/complaints/{id} - Delete complaint (Admin)
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteComplaint(int id)
         {
