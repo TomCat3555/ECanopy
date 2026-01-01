@@ -35,7 +35,22 @@ namespace ECanopy.Data
             modelBuilder.Entity<RwaMember>()
                 .HasIndex(r => new { r.UserId, r.SocietyId })
                 .IsUnique();
-        }
 
+            modelBuilder.Entity<Complaint>()
+                .HasIndex(c => c.TicketNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Complaint>()
+                .HasMany(c => c.Comments)
+                .WithOne(cc => cc.Complaint)
+                .HasForeignKey(cc => cc.ComplaintId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Complaint>()
+                .HasMany(c => c.Attachments)
+                .WithOne(ca => ca.Complaint)
+                .HasForeignKey(ca => ca.ComplaintId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
     }
 }

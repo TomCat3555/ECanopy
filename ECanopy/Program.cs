@@ -48,7 +48,6 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IResidentJoinRequestService, ResidentJoinRequestService>();
 builder.Services.AddScoped<IResidentOnboardingService, ResidentOnboardingService>();
 
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
