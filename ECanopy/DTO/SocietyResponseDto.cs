@@ -2,7 +2,6 @@
 {
     public class SocietyResponseDto
     {
-        public int SocietyId { get; set; }
         public string SocietyName { get; set; } = null!;
         public string SocietyDescription { get; set; } = null!;
         public string Owner { get; set; } = null!;

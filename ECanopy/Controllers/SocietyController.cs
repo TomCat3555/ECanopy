@@ -1,9 +1,9 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ECanopy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -20,11 +20,17 @@ namespace ECanopy.Controllers
             _service = service;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "RWA_President,RWA_Secretary")]
         [HttpPost]
-        public async Task<IActionResult> Create(CreateSocietyDto dto)
+        public async Task<IActionResult> CreateSociety(CreateSocietyDto dto)
         {
-            return Ok(await _service.CreateAsync(dto));
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var result =
+                await _service.CreateAsync(userId, dto);
+
+            return Ok(result);
         }
 
         [HttpGet]
@@ -35,3 +41,5 @@ namespace ECanopy.Controllers
     }
 
 }
+
+

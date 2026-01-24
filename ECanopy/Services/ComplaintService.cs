@@ -2,7 +2,6 @@
 using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 
@@ -12,13 +11,10 @@ namespace ECanopy.Services
     {
         Task<Complaint> CreateComplaint(Complaint complaint);
         Task<Complaint?> GetComplaintByTicketNumber(string ticketNumber);
-        Task<Complaint?> GetComplaintById(int id);
-        Task<IEnumerable<Complaint>> GetAllComplaints();
-        Task<Complaint?> UpdateComplaintStatus(int id, string status);
-        Task<ComplaintComments> AddComment(int complaintId, ComplaintComments comment);
-        Task<bool> DeleteComplaint(int id);
-        string GenerateTicketNumber();
-        Task<ECanopy.DTO.ComplaintAnalyticsDto> GetAnalytics();
+        Task<ComplaintComments> AddCommentByTicket(string ticketNumber, ComplaintComments comment);
+        Task<Complaint?> UpdateComplaintStatusByTicket(string ticketNumber, string status);
+        Task<bool> DeleteByTicket(string ticketNumber);
+        Task<ComplaintAnalyticsDto> GetAnalytics();
     }
 
     public class ComplaintService : IComplaintService
@@ -30,125 +26,111 @@ namespace ECanopy.Services
             _context = context;
         }
 
-        public string GenerateTicketNumber()
-        {
-            var year = DateTime.UtcNow.Year;
-            var lastComplaint = _context.Complaints
-                .Where(c => c.TicketNumber.StartsWith($"TKT-{year}-"))
-                .OrderByDescending(c => c.ComplaintId)
-                .FirstOrDefault();
-
-            int nextNumber = 1;
-            if (lastComplaint != null)
-            {
-                var lastNumberStr = lastComplaint.TicketNumber.Split('-').Last();
-                if (int.TryParse(lastNumberStr, out int lastNumber))
-                {
-                    nextNumber = lastNumber + 1;
-                }
-            }
-
-            return $"TKT-{year}-{nextNumber:D6}";
-        }
-
+        // ===============================
+        // CREATE COMPLAINT (PUBLIC)
+        // ===============================
         public async Task<Complaint> CreateComplaint(Complaint complaint)
         {
-            complaint.TicketNumber = GenerateTicketNumber();
-            complaint.CreatedOn = DateTime.UtcNow;
+            complaint.TicketNumber = GenerateTicket();
             complaint.Status = "Open";
+            complaint.CreatedOn = DateTime.UtcNow;
 
             _context.Complaints.Add(complaint);
             await _context.SaveChangesAsync();
+
             return complaint;
         }
 
+        // ===============================
+        // GET BY TICKET
+        // ===============================
         public async Task<Complaint?> GetComplaintByTicketNumber(string ticketNumber)
         {
             return await _context.Complaints
-                .Include(c => c.Comments.OrderBy(cm => cm.CommentedOn))
+                .Include(c => c.Comments.OrderBy(x => x.CommentedOn))
                 .Include(c => c.Attachments)
                 .FirstOrDefaultAsync(c => c.TicketNumber == ticketNumber);
         }
 
-        public async Task<Complaint?> GetComplaintById(int id)
+        // ===============================
+        // ADD COMMENT BY TICKET
+        // ===============================
+        public async Task<ComplaintComments> AddCommentByTicket(
+            string ticketNumber,
+            ComplaintComments comment)
         {
-            return await _context.Complaints
-                .Include(c => c.Comments.OrderBy(cm => cm.CommentedOn))
-                .Include(c => c.Attachments)
-                .FirstOrDefaultAsync(c => c.ComplaintId == id);
-        }
+            var complaint = await _context.Complaints
+                .FirstOrDefaultAsync(c => c.TicketNumber == ticketNumber)
+                ?? throw new NotFoundException("Complaint not found");
 
-        public async Task<IEnumerable<Complaint>> GetAllComplaints()
-        {
-            return await _context.Complaints
-                .Include(c => c.Comments)
-                .Include(c => c.Attachments)
-                .OrderByDescending(c => c.CreatedOn)
-                .ToListAsync();
-        }
-
-        public async Task<Complaint?> UpdateComplaintStatus(int id, string status)
-        {
-            var complaint = await _context.Complaints.FindAsync(id);
-            if (complaint == null) return null;
-
-            complaint.Status = status;
-            complaint.UpdatedOn = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return complaint;
-        }
-
-        public async Task<ComplaintComments> AddComment(int complaintId, ComplaintComments comment)
-        {
-            comment.ComplaintId = complaintId;
+            comment.ComplaintId = complaint.ComplaintId;
             comment.CommentedOn = DateTime.UtcNow;
 
             _context.ComplaintComments.Add(comment);
             await _context.SaveChangesAsync();
+
             return comment;
         }
 
-        public async Task<bool> DeleteComplaint(int id)
+        // ===============================
+        // UPDATE STATUS (ADMIN)
+        // ===============================
+        public async Task<Complaint?> UpdateComplaintStatusByTicket(
+            string ticketNumber,
+            string status)
         {
-            var complaint = await _context.Complaints.FindAsync(id);
-            if (complaint == null) return false;
+            var complaint = await _context.Complaints
+                .FirstOrDefaultAsync(c => c.TicketNumber == ticketNumber);
+
+            if (complaint == null)
+                return null;
+
+            complaint.Status = status;
+            complaint.UpdatedOn = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return complaint;
+        }
+
+        // ===============================
+        // DELETE BY TICKET (ADMIN)
+        // ===============================
+        public async Task<bool> DeleteByTicket(string ticketNumber)
+        {
+            var complaint = await _context.Complaints
+                .FirstOrDefaultAsync(c => c.TicketNumber == ticketNumber);
+
+            if (complaint == null)
+                return false;
 
             _context.Complaints.Remove(complaint);
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<ECanopy.DTO.ComplaintAnalyticsDto> GetAnalytics()
+        // ===============================
+        // ANALYTICS
+        // ===============================
+        public async Task<ComplaintAnalyticsDto> GetAnalytics()
         {
             var complaints = await _context.Complaints.ToListAsync();
 
-            var statusCounts = complaints
-                .GroupBy(c => c.Status)
-                .ToDictionary(g => g.Key ?? "Unknown", g => g.Count());
-
-            var categoryCounts = complaints
-                .GroupBy(c => c.Category)
-                .ToDictionary(g => g.Key ?? "General", g => g.Count());
-
-            var dailyTrends = complaints
-                .GroupBy(c => c.CreatedOn.Date)
-                .OrderByDescending(g => g.Key)
-                .Take(7)
-                .Select(g => new ECanopy.DTO.DailyTrendDto
-                {
-                    Date = g.Key.ToString("MMM dd, yyyy"),
-                    NewComplaints = g.Count(),
-                    ResolvedComplaints = g.Count(c => c.Status == "Resolved" || c.Status == "Closed")
-                })
-                .ToList();
-
-            return new ECanopy.DTO.ComplaintAnalyticsDto
+            return new ComplaintAnalyticsDto
             {
                 TotalComplaints = complaints.Count,
-                StatusCounts = statusCounts,
-                CategoryCounts = categoryCounts,
-                DailyTrends = dailyTrends
+                StatusCounts = complaints
+                    .GroupBy(c => c.Status)
+                    .ToDictionary(g => g.Key, g => g.Count())
             };
         }
+
+        // ===============================
+        // PRIVATE
+        // ===============================
+        private string GenerateTicket()
+            => $"TKT-{DateTime.UtcNow:yyyy}-{Guid.NewGuid():N}".Substring(0, 18);
+
     }
+   
 }
+

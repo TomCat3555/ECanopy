@@ -1,6 +1,6 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
-using ECanopy.Services.Interfaces;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -9,47 +9,46 @@ namespace ECanopy.Controllers
 {
     [ApiController]
     [Route("api/bills")]
-    public class MaintainanceBillController : RwaController
+    public class MaintainanceBillController : ControllerBase
     {
-        private readonly IMaintainanceBillService _billService;
+        private readonly IMaintainanceBillService _service;
 
-        public MaintainanceBillController(
-            ApplicationDbContext context,
-            IMaintainanceBillService billService)
-            : base(context)
+        public MaintainanceBillController(IMaintainanceBillService service)
         {
-            _billService = billService;
+            _service = service;
         }
 
-        [Authorize(Roles = "RWA_Treasurer,Admin")]
+        // RWA creates bill
+        [Authorize(Roles = "RWA_President,RWA_Secretary,RWA_Treasurer")]
         [HttpPost]
-        public async Task<IActionResult> CreateBill(CreateMaintainanceBillDto dto)
+        public async Task<IActionResult> Create(CreateMaintainanceBillDto dto)
         {
-            await LoadRwaContextAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
             return Ok(
-                await _billService.CreateAsync(
-                    RwaSocietyId!.Value, dto));
+                await _service.CreateAsync(userId, dto));
         }
 
+        // Resident views own bills
         [Authorize(Roles = "Resident")]
         [HttpGet("my")]
-        public async Task<IActionResult> GetMyBills()
+        public async Task<IActionResult> My()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
             return Ok(
-                await _billService.GetMyAsync(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier)!));
+                await _service.GetMyAsync(userId));
         }
 
+        // RWA views all bills in society
         [Authorize(Roles = "RWA_President,RWA_Treasurer")]
         [HttpGet]
-        public async Task<IActionResult> GetAllBills()
+        public async Task<IActionResult> All()
         {
-            await LoadRwaContextAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
             return Ok(
-                await _billService.GetAllAsync(
-                    RwaSocietyId!.Value));
+                await _service.GetAllAsync(userId));
         }
     }
 }

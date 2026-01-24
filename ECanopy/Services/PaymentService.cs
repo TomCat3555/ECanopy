@@ -1,12 +1,17 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Services.Interfaces;
 using ECanopy.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECanopy.Services
 {
+    public interface IPaymentService
+    {
+        Task<PaymentResponseDto> PayAsync(string userId, CreatePaymentDto dto);
+        Task<IEnumerable<PaymentResponseDto>> MyAsync(string userId);
+        Task<IEnumerable<PaymentResponseDto>> AllAsync(int societyId);
+    }
     public class PaymentService : IPaymentService
     {
         private readonly ApplicationDbContext _context;
@@ -16,17 +21,22 @@ namespace ECanopy.Services
             _context = context;
         }
 
-        public async Task<PaymentResponseDto> PayAsync(string userId, CreatePaymentDto dto)
+        // ===============================
+        // RESIDENT PAYS MAINTENANCE BILL
+        // ===============================
+        public async Task<PaymentResponseDto> PayAsync(
+            string userId,
+            CreatePaymentDto dto)
         {
             var resident = await _context.Residents
-                .FirstOrDefaultAsync(r => r.UserId == userId);
-
-            if (resident == null)
-                throw new BusinessException("Resident profile not found");
+                .FirstOrDefaultAsync(r => r.UserId == userId)
+                ?? throw new BusinessException("Resident profile not found");
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            var bill = await _context.MaintainanceBills.FindAsync(dto.MaintainanceBillId)
+            var bill = await _context.MaintainanceBills
+                .Include(b => b.Flat)
+                .FirstOrDefaultAsync(b => b.MaintainanceBillId == dto.MaintainanceBillId)
                 ?? throw new BusinessException("Invalid bill");
 
             if (bill.IsPaid)
@@ -58,6 +68,9 @@ namespace ECanopy.Services
             };
         }
 
+        // ===============================
+        // OWNER VIEWS OWN PAYMENTS
+        // ===============================
         public async Task<IEnumerable<PaymentResponseDto>> MyAsync(string userId)
         {
             var resident = await _context.Residents
@@ -68,6 +81,7 @@ namespace ECanopy.Services
 
             return await _context.Payments
                 .Where(p => p.ResidentId == resident.ResidentId)
+                .OrderByDescending(p => p.PaymentDate)
                 .Select(p => new PaymentResponseDto
                 {
                     Amount = p.Amount,
@@ -77,6 +91,9 @@ namespace ECanopy.Services
                 .ToListAsync();
         }
 
+        // ===============================
+        // RWA VIEWS ALL SOCIETY PAYMENTS
+        // ===============================
         public async Task<IEnumerable<PaymentResponseDto>> AllAsync(int societyId)
         {
             return await _context.Payments
@@ -92,3 +109,4 @@ namespace ECanopy.Services
     }
 
 }
+

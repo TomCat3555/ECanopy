@@ -12,6 +12,12 @@ namespace ECanopy.Models
         [MaxLength(50)]
         public string TicketNumber { get; set; } = string.Empty;
 
+       [Required]
+        public int FlatId { get; set; }
+
+        [ForeignKey(nameof(FlatId))]
+        public Flat Flat { get; set; } = null!;
+
         [Required]
         [MaxLength(100)]
         public string Category { get; set; } = string.Empty;
@@ -42,6 +48,8 @@ namespace ECanopy.Models
 
         // For admin assignment (optional)
         public int? AssignedTo { get; set; }
+        public int ResidentId { get; set; }
+        public Resident? Resident { get; set; }
 
         // Navigation properties
         public ICollection<ComplaintComments> Comments { get; set; } = new List<ComplaintComments>();

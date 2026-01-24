@@ -32,10 +32,6 @@ namespace ECanopy.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<RwaMember>()
-                .HasIndex(r => new { r.UserId, r.SocietyId })
-                .IsUnique();
-
             modelBuilder.Entity<Complaint>()
                 .HasIndex(c => c.TicketNumber)
                 .IsUnique();
@@ -51,6 +47,27 @@ namespace ECanopy.Data
                 .WithOne(ca => ca.Complaint)
                 .HasForeignKey(ca => ca.ComplaintId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RwaMember>()
+                .HasIndex(r => new { r.SocietyId, r.Role })
+                .IsUnique()
+                .HasFilter("[SocietyId] IS NOT NULL");
+
+
+
+            modelBuilder.Entity<Resident>()
+                .HasIndex(r => r.UserId)
+                .IsUnique();
+
+            modelBuilder.Entity<RwaMember>()
+                .HasIndex(r => r.UserId)
+                .IsUnique();
+
+            modelBuilder.Entity<ResidentJoinRequest>()
+                .HasIndex(r => r.UserId)
+                .IsUnique()
+                .HasFilter("[Status] = 'Pending'");
+
         }
     }
 }

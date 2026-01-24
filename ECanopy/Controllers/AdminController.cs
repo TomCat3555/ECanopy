@@ -1,4 +1,5 @@
-﻿using ECanopy.Services.Interfaces;
+﻿using ECanopy.DTO;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -18,29 +19,23 @@ namespace ECanopy.Controllers
         }
 
         [HttpGet("role-requests/pending")]
-        public async Task<IActionResult> GetPendingRoleRequests()
+        public async Task<IActionResult> GetPending()
         {
             return Ok(await _adminService.GetPendingRoleRequestsAsync());
         }
 
-        [HttpPost("role-requests/{id}/approve")]
-        public async Task<IActionResult> ApproveRoleRequest(int id)
+        [HttpPost("role-requests/approve")]
+        public async Task<IActionResult> Approve(ProcessRoleRequestDto dto)
         {
-            await _adminService.ApproveRoleRequestAsync(
-                id,
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            return Ok("Role request approved successfully");
+            await _adminService.ApproveRoleRequestAsync(dto.UserEmail);
+            return Ok(new { message = "Role request approved" });
         }
 
-        [HttpPost("role-requests/{id}/reject")]
-        public async Task<IActionResult> RejectRoleRequest(int id)
+        [HttpPost("role-requests/reject")]
+        public async Task<IActionResult> Reject(ProcessRoleRequestDto dto)
         {
-            await _adminService.RejectRoleRequestAsync(
-                id,
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            return Ok("Role request rejected");
+            await _adminService.RejectRoleRequestAsync(dto.UserEmail);
+            return Ok(new { message = "Role request rejected" });
         }
     }
 }

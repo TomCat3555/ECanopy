@@ -1,8 +1,9 @@
+using ECanopy.Common;
 using ECanopy.Data;
 using ECanopy.Data.Seed;
 using ECanopy.Models;
 using ECanopy.Services;
-using ECanopy.Services.Interfaces;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,10 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddAuthorization();
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options => {
+        options.SuppressModelStateInvalidFilter = false;
+        });
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -45,8 +49,13 @@ builder.Services.AddScoped<IComplaintService, ComplaintService>();
 builder.Services.AddScoped<IMaintainanceBillService, MaintainanceBillService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IRoleRequestService, RoleRequestService>();
+builder.Services.AddScoped<IRwaResidentApprovalService, RwaResidentApprovalService>();
 builder.Services.AddScoped<IResidentJoinRequestService, ResidentJoinRequestService>();
 builder.Services.AddScoped<IResidentOnboardingService, ResidentOnboardingService>();
+builder.Services.AddScoped<ISocietyService, SocietyService>();
+builder.Services.AddScoped<ISocietyLookupService, SocietyLookupService>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -58,6 +67,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Society Management System"
     });
 
+    /*
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -66,6 +76,7 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header
     });
+    
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -81,7 +92,8 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-});
+    */
+    });
 
 var app = builder.Build();
 
@@ -102,6 +114,30 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ECanopy API v1");
     });
 }
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.ContentType = "application/json";
+
+        var exception = context.Features
+            .Get<IExceptionHandlerFeature>()?.Error;
+
+        context.Response.StatusCode = exception switch
+        {
+            BusinessException => StatusCodes.Status400BadRequest,
+            ForbiddenException => StatusCodes.Status403Forbidden,
+            NotFoundException => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = exception?.Message
+        });
+    });
+});
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

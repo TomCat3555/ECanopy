@@ -2,11 +2,16 @@
 using ECanopy.Models;
 using ECanopy.Common;
 using Microsoft.EntityFrameworkCore;
-using ECanopy.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 namespace ECanopy.Services
 {
-    public class AuthService:IAuthService
+    public interface IAuthService
+    {
+        Task RegisterAsync(RegisterDto dto);
+        Task LoginAsync(LoginDto dto);
+        Task LogoutAsync();
+    }
+    public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -19,6 +24,9 @@ namespace ECanopy.Services
             _signInManager = signInManager;
         }
 
+        // ===============================
+        // REGISTER (DEFAULT RESIDENT)
+        // ===============================
         public async Task RegisterAsync(RegisterDto dto)
         {
             if (await _userManager.FindByEmailAsync(dto.Email) != null)
@@ -35,19 +43,29 @@ namespace ECanopy.Services
             if (!result.Succeeded)
                 throw new BusinessException("Registration failed");
 
+            // Every new user is a Resident by default
             await _userManager.AddToRoleAsync(user, "Resident");
         }
 
+        // ===============================
+        // LOGIN
+        // ===============================
         public async Task LoginAsync(LoginDto dto)
         {
             var result = await _signInManager.PasswordSignInAsync(
                 dto.Email,
                 dto.Password,
-                true,
+                false,
                 false);
 
             if (!result.Succeeded)
                 throw new BusinessException("Invalid credentials");
         }
+
+        public async Task LogoutAsync()
+        {
+            await _signInManager.SignOutAsync();
+        }
+
     }
 }

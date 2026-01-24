@@ -2,11 +2,20 @@
 using ECanopy.DTO;
 using ECanopy.Models;
 using ECanopy.Common;
-using ECanopy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECanopy.Services
 {
+    public interface IMaintainanceBillService
+    {
+        Task<MaintainanceBillResponseDto> CreateAsync(
+        string userId,
+        CreateMaintainanceBillDto dto);
+
+        Task<IEnumerable<MaintainanceBillResponseDto>> GetMyAsync(string userId);
+
+        Task<IEnumerable<MaintainanceBillResponseDto>> GetAllAsync(string userId);
+    }
     public class MaintainanceBillService : IMaintainanceBillService
     {
         private readonly ApplicationDbContext _context;
@@ -17,21 +26,32 @@ namespace ECanopy.Services
         }
 
         public async Task<MaintainanceBillResponseDto> CreateAsync(
-            int societyId, CreateMaintainanceBillDto dto)
+            string userId,
+            CreateMaintainanceBillDto dto)
         {
-            var building = await _context.Buildings.FirstOrDefaultAsync(b =>
-                b.BuildingName == dto.BuildingName &&
-                b.SocietyId == societyId);
+            var rwa = await _context.RwaMembers
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.IsActive)
+                ?? throw new ForbiddenException("User is not an RWA member");
 
-            if (building == null)
-                throw new NotFoundException("Building not found");
+            if (rwa.Role != "RWA_President" &&
+                rwa.Role != "RWA_Secretary" &&
+                rwa.Role != "RWA_Treasurer")
+                throw new ForbiddenException("Not authorized to create bills");
 
-            var flat = await _context.Flats.FirstOrDefaultAsync(f =>
-                f.FlatNumber == dto.FlatNumber &&
-                f.BuildingId == building.BuildingId);
+            if (rwa.SocietyId == null)
+                throw new BusinessException("RWA not linked to a society");
 
-            if (flat == null)
-                throw new NotFoundException("Flat not found");
+            var building = await _context.Buildings
+                .FirstOrDefaultAsync(b =>
+                    b.BuildingName == dto.BuildingName &&
+                    b.SocietyId == rwa.SocietyId)
+                ?? throw new NotFoundException("Building not found");
+
+            var flat = await _context.Flats
+                .FirstOrDefaultAsync(f =>
+                    f.FlatNumber == dto.FlatNumber &&
+                    f.BuildingId == building.BuildingId)
+                ?? throw new NotFoundException("Flat not found");
 
             if (!flat.IsOccupied)
                 throw new BusinessException("Flat is not occupied");
@@ -55,13 +75,17 @@ namespace ECanopy.Services
             };
         }
 
-        public async Task<IEnumerable<MaintainanceBillResponseDto>> GetMyAsync(string userId)
+        // ===============================
+        // RESIDENT: MY BILLS
+        // ===============================
+        public async Task<IEnumerable<MaintainanceBillResponseDto>> GetMyAsync(
+            string userId)
         {
             var resident = await _context.Residents
-                .Include(r => r.Flat)
-                .FirstOrDefaultAsync(r => r.UserId == userId);
+                .FirstOrDefaultAsync(r => r.UserId == userId)
+                ?? throw new BusinessException("Resident profile not found");
 
-            if (resident == null || !resident.IsOwner)
+            if (!resident.IsOwner)
                 throw new ForbiddenException("Only owner can view bills");
 
             return await _context.MaintainanceBills
@@ -75,10 +99,19 @@ namespace ECanopy.Services
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<MaintainanceBillResponseDto>> GetAllAsync(int societyId)
+        // ===============================
+        // RWA: ALL BILLS (SOCIETY)
+        // ===============================
+        public async Task<IEnumerable<MaintainanceBillResponseDto>> GetAllAsync(
+            string userId)
         {
+            var rwa = await _context.RwaMembers
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.IsActive)
+                ?? throw new ForbiddenException("Not authorized");
+
             return await _context.MaintainanceBills
-                .Where(b => b.Flat.Building.SocietyId == societyId)
+                .Where(b =>
+                    b.Flat.Building.SocietyId == rwa.SocietyId)
                 .Select(b => new MaintainanceBillResponseDto
                 {
                     Amount = b.Amount,
@@ -88,5 +121,4 @@ namespace ECanopy.Services
                 .ToListAsync();
         }
     }
-
 }

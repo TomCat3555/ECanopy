@@ -1,20 +1,20 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
-using ECanopy.Services.Interfaces;
+using ECanopy.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ECanopy.Controllers
 {
     [ApiController]
     [Route("api/buildings")]
-    public class BuildingController : RwaController
+    [Authorize(Roles = "RWA_President,RWA_Secretary")]
+    public class BuildingController : ControllerBase
     {
         private readonly IBuildingService _buildingService;
 
-        public BuildingController(
-            ApplicationDbContext context,
-            IBuildingService buildingService)
-            : base(context)
+        public BuildingController(IBuildingService buildingService)
         {
             _buildingService = buildingService;
         }
@@ -22,11 +22,11 @@ namespace ECanopy.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding(CreateBuildingDto dto)
         {
-            await LoadRwaContextAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            return Ok(
-                await _buildingService.CreateAsync(
-                    RwaSocietyId!.Value, dto));
+            var result = await _buildingService.CreateAsync(userId, dto);
+
+            return Ok(result);
         }
     }
 }

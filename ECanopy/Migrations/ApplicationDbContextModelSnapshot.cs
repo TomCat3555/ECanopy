@@ -148,10 +148,16 @@ namespace ECanopy.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<int>("FlatId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<int>("ResidentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -167,6 +173,10 @@ namespace ECanopy.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("ComplaintId");
+
+                    b.HasIndex("FlatId");
+
+                    b.HasIndex("ResidentId");
 
                     b.HasIndex("TicketNumber")
                         .IsUnique();
@@ -225,7 +235,7 @@ namespace ECanopy.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
-                    b.Property<string>("CommentedBy")
+                    b.Property<string>("CommentedByUserId")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
@@ -326,6 +336,8 @@ namespace ECanopy.Migrations
 
                     b.HasKey("NoticeId");
 
+                    b.HasIndex("SocietyId");
+
                     b.ToTable("Notices");
                 });
 
@@ -380,10 +392,6 @@ namespace ECanopy.Migrations
                     b.Property<bool>("IsOwner")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -392,7 +400,8 @@ namespace ECanopy.Migrations
 
                     b.HasIndex("FlatId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("Residents");
                 });
@@ -420,7 +429,9 @@ namespace ECanopy.Migrations
 
                     b.HasIndex("FlatId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Pending'");
 
                     b.ToTable("ResidentJoinRequests");
                 });
@@ -438,21 +449,13 @@ namespace ECanopy.Migrations
 
                     b.Property<string>("RequestedRole")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ReviewedByUserId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("SocietyId")
-                        .HasColumnType("int");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -478,7 +481,7 @@ namespace ECanopy.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<int?>("SocietyId")
                         .HasColumnType("int");
@@ -489,10 +492,12 @@ namespace ECanopy.Migrations
 
                     b.HasKey("RwaMemberId");
 
-                    b.HasIndex("SocietyId");
-
-                    b.HasIndex("UserId", "SocietyId")
+                    b.HasIndex("UserId")
                         .IsUnique();
+
+                    b.HasIndex("SocietyId", "Role")
+                        .IsUnique()
+                        .HasFilter("[SocietyId] IS NOT NULL");
 
                     b.ToTable("RwaMembers");
                 });
@@ -506,15 +511,9 @@ namespace ECanopy.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SocietyId"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Owner")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("SocietyDescription")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("SocietyName")
@@ -669,6 +668,25 @@ namespace ECanopy.Migrations
                     b.Navigation("Society");
                 });
 
+            modelBuilder.Entity("ECanopy.Models.Complaint", b =>
+                {
+                    b.HasOne("ECanopy.Models.Flat", "Flat")
+                        .WithMany()
+                        .HasForeignKey("FlatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ECanopy.Models.Resident", "Resident")
+                        .WithMany()
+                        .HasForeignKey("ResidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Flat");
+
+                    b.Navigation("Resident");
+                });
+
             modelBuilder.Entity("ECanopy.Models.ComplaintAttachment", b =>
                 {
                     b.HasOne("ECanopy.Models.Complaint", "Complaint")
@@ -721,6 +739,17 @@ namespace ECanopy.Migrations
                     b.Navigation("Resident");
                 });
 
+            modelBuilder.Entity("ECanopy.Models.Notice", b =>
+                {
+                    b.HasOne("ECanopy.Models.Society", "Society")
+                        .WithMany()
+                        .HasForeignKey("SocietyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Society");
+                });
+
             modelBuilder.Entity("ECanopy.Models.Payment", b =>
                 {
                     b.HasOne("ECanopy.Models.MaintainanceBill", "MaintainanceBill")
@@ -749,8 +778,8 @@ namespace ECanopy.Migrations
                         .IsRequired();
 
                     b.HasOne("ECanopy.Models.ApplicationUser", "User")
-                        .WithMany("Residents")
-                        .HasForeignKey("UserId")
+                        .WithOne("Resident")
+                        .HasForeignKey("ECanopy.Models.Resident", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -861,7 +890,7 @@ namespace ECanopy.Migrations
                 {
                     b.Navigation("JoinRequests");
 
-                    b.Navigation("Residents");
+                    b.Navigation("Resident");
                 });
 
             modelBuilder.Entity("ECanopy.Models.Building", b =>

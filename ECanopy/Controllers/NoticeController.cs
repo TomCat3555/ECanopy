@@ -1,6 +1,7 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,51 +13,39 @@ namespace ECanopy.Controllers
     [Route("api/notices")]
     public class NoticeController : RwaController
     {
-        public NoticeController(ApplicationDbContext context)
-            : base(context) { }
+        private readonly INoticeService _noticeService;
 
+        public NoticeController(
+            ApplicationDbContext context,
+            INoticeService noticeService)
+            : base(context)
+        {
+            _noticeService = noticeService;
+        }
+
+        
         [Authorize(Roles = "RWA_President,RWA_Secretary")]
         [HttpPost]
         public async Task<IActionResult> CreateNotice(CreateNoticeDto dto)
         {
             await LoadRwaContextAsync();
 
-            var societyId = RwaSocietyId!.Value;
+            await _noticeService.CreateAsync(
+                RwaSocietyId!.Value,
+                dto);
 
-            var notice = new Notice
-            {
-                Title = dto.Title,
-                Message = dto.Message,
-                SocietyId = societyId,
-                PublishedAt = DateTime.UtcNow
-            };
-
-            _context.Notices.Add(notice);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return Ok(new { message = "Notice published" });
         }
 
-        [Authorize(Roles = "Resident")]
+        [Authorize(Roles = "Resident,RWA_President,RWA_Secretary,RWA_Treasurer")]
         [HttpGet]
         public async Task<IActionResult> GetNotices()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            var resident = await _context.Residents
-                .Include(r => r.Flat)
-                .ThenInclude(f => f.Building)
-                .FirstOrDefaultAsync(r => r.UserId == userId);
-
-            if (resident == null)
-                return BadRequest("Resident profile not found");
-
-            var societyId = resident.Flat.Building.SocietyId;
-
-            var notices = await _context.Notices
-                .Where(n => n.SocietyId == societyId)
-                .OrderByDescending(n => n.PublishedAt)
-                .ToListAsync();
+            var notices =
+                await _noticeService.GetForResidentAsync(userId);
 
             return Ok(notices);
         }

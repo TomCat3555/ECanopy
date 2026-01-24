@@ -9,13 +9,13 @@ namespace ECanopy.Models
         public int PaymentId { get; set; }
         public decimal Amount { get; set; }
         public DateTime PaymentDate { get; set; }
-        public string PaymentType { get; set; }
+        public string PaymentType { get; set; } = null!;
         public int ResidentId { get; set; }
         [ForeignKey(nameof(ResidentId))]
-        public Resident Resident { get; set; }
+        public Resident Resident { get; set; } = null!;
         public int MaintainanceBillId { get; set; }
         [ForeignKey(nameof(MaintainanceBillId))]
-        public MaintainanceBill MaintainanceBill { get; set; }
+        public MaintainanceBill MaintainanceBill { get; set; } = null!;
     }
 
 }

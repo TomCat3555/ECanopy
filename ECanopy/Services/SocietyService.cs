@@ -1,21 +1,51 @@
-﻿using ECanopy.Data;
+﻿using ECanopy.Common;
+using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECanopy.Services
 {
-    public class SocietyService
+    public interface ISocietyService
+    {
+        Task<SocietyResponseDto> CreateAsync(string userId, CreateSocietyDto dto);
+        Task<IEnumerable<SocietyResponseDto>> GetAllAsync();
+    }
+
+    public class SocietyService : ISocietyService
     {
         private readonly ApplicationDbContext _context;
+
 
         public SocietyService(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<SocietyResponseDto> CreateAsync(CreateSocietyDto dto)
+        public async Task<SocietyResponseDto> CreateAsync(
+            string userId,
+            CreateSocietyDto dto)
         {
+            var rwaMember = await _context.RwaMembers
+                .FirstOrDefaultAsync(r =>
+                    r.UserId == userId && r.IsActive);
+
+            if (rwaMember == null)
+                throw new BusinessException("User is not an RWA member");
+
+            if (rwaMember.Role != "RWA_President" &&
+                rwaMember.Role != "RWA_Secretary")
+                throw new BusinessException("Not authorized to create society");
+
+            if (rwaMember.SocietyId != null)
+                throw new BusinessException("RWA already manages a society");
+
+            bool exists = await _context.Societies
+                .AnyAsync(s => s.SocietyName == dto.SocietyName);
+
+            if (exists)
+                throw new BusinessException("Society already exists");
+
             var society = new Society
             {
                 SocietyName = dto.SocietyName,
@@ -25,10 +55,13 @@ namespace ECanopy.Services
             _context.Societies.Add(society);
             await _context.SaveChangesAsync();
 
+            rwaMember.SocietyId = society.SocietyId;
+            await _context.SaveChangesAsync();
+
             return new SocietyResponseDto
             {
-                SocietyId = society.SocietyId,
-                SocietyName = society.SocietyName
+                SocietyName = society.SocietyName,
+                Address = society.Address
             };
         }
 
@@ -38,10 +71,11 @@ namespace ECanopy.Services
                 .OrderBy(s => s.SocietyName)
                 .Select(s => new SocietyResponseDto
                 {
-                    SocietyId = s.SocietyId,
-                    SocietyName = s.SocietyName
+                    SocietyName = s.SocietyName,
+                    Address = s.Address
                 })
                 .ToListAsync();
         }
+
     }
 }

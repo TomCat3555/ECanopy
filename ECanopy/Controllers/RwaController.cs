@@ -6,7 +6,6 @@ using System.Security.Claims;
 
 namespace ECanopy.Controllers
 {
-    [Authorize(Roles = "RWA_President,RWA_Secretary")]
     public abstract class RwaController : ControllerBase
     {
         protected readonly ApplicationDbContext _context;
@@ -19,7 +18,8 @@ namespace ECanopy.Controllers
 
         protected async Task LoadRwaContextAsync()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var rwa = await _context.RwaMembers
                 .AsNoTracking()
@@ -35,14 +35,7 @@ namespace ECanopy.Controllers
                 throw new UnauthorizedAccessException(
                     "RWA member not linked to any society");
 
-            RwaSocietyId = rwa.SocietyId; 
-        }
-
-        protected void EnsureSameSociety(int societyId)
-        {
-            if (RwaSocietyId != societyId)
-                throw new UnauthorizedAccessException(
-                    "You are not authorized for this society");
+            RwaSocietyId = rwa.SocietyId;
         }
     }
 }

@@ -2,7 +2,6 @@
 using ECanopy.DTO;
 using ECanopy.Models;
 using ECanopy.Services;
-using ECanopy.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,8 +9,8 @@ using static ECanopy.DTO.ComplaintDtos;
 
 namespace ECanopy.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/complaints")]
     public class ComplaintsController : ControllerBase
     {
         private readonly IComplaintService _complaintService;
@@ -21,8 +20,12 @@ namespace ECanopy.Controllers
             _complaintService = complaintService;
         }
 
+        // ===============================
+        // CREATE COMPLAINT (PUBLIC)
+        // ===============================
         [HttpPost]
-        public async Task<ActionResult<ComplaintResponseDto>> CreateComplaint(CreateComplaintDto dto)
+        public async Task<ActionResult<ComplaintResponseDto>> CreateComplaint(
+            CreateComplaintDto dto)
         {
             var complaint = new Complaint
             {
@@ -36,100 +39,102 @@ namespace ECanopy.Controllers
 
             var created = await _complaintService.CreateComplaint(complaint);
 
-            var response = MapToResponseDto(created);
-            return CreatedAtAction(nameof(GetComplaintByTicket), new { ticketNumber = created.TicketNumber }, response);
+            return CreatedAtAction(
+                nameof(GetByTicket),
+                new { ticketNumber = created.TicketNumber },
+                MapToResponseDto(created));
         }
 
-        // GET: api/complaints/track/{ticketNumber} - Track complaint by ticket number
+        // ===============================
+        // TRACK COMPLAINT BY TICKET
+        // ===============================
         [HttpGet("track/{ticketNumber}")]
-        public async Task<ActionResult<ComplaintResponseDto>> GetComplaintByTicket(string ticketNumber)
+        public async Task<ActionResult<ComplaintResponseDto>> GetByTicket(
+            string ticketNumber)
         {
-            var complaint = await _complaintService.GetComplaintByTicketNumber(ticketNumber);
+            var complaint =
+                await _complaintService.GetComplaintByTicketNumber(ticketNumber);
+
             if (complaint == null)
-                return NotFound(new { message = "Complaint not found with this ticket number" });
+                return NotFound(new { message = "Complaint not found" });
 
             return Ok(MapToResponseDto(complaint));
         }
 
-        // GET: api/complaints/analytics - Get complaint analytics
-        [HttpGet("analytics")]
-        public async Task<ActionResult<ComplaintAnalyticsDto>> GetAnalytics()
-        {
-            var analytics = await _complaintService.GetAnalytics();
-            return Ok(analytics);
-        }
-
-        // GET: api/complaints/{id} - Get complaint by ID
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ComplaintResponseDto>> GetComplaint(int id)
-        {
-            var complaint = await _complaintService.GetComplaintById(id);
-            if (complaint == null)
-                return NotFound();
-
-            return Ok(MapToResponseDto(complaint));
-        }
-
-        // GET: api/complaints - Get all complaints
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ComplaintResponseDto>>> GetAllComplaints()
-        {
-            var complaints = await _complaintService.GetAllComplaints();
-            var response = complaints.Select(MapToResponseDto);
-            return Ok(response);
-        }
-
-        // PUT: api/complaints/{id}/status - Update complaint status
-        [Authorize(Roles = "Admin")]
-        [HttpPut("{id}/status")]
-        public async Task<ActionResult<ComplaintResponseDto>> UpdateStatus(int id, [FromBody] string status)
-        {
-            var complaint = await _complaintService.UpdateComplaintStatus(id, status);
-            if (complaint == null)
-                return NotFound();
-
-            return Ok(MapToResponseDto(complaint));
-        }
-
-        // POST: api/complaints/{id}/comments - Add comment to complaint
-        [HttpPost("{id}/comments")]
-        public async Task<ActionResult<CommentDto>> AddComment(int id, AddCommentDto dto)
+        // ===============================
+        // ADD COMMENT (NO IDS)
+        // ===============================
+        [HttpPost("track/{ticketNumber}/comments")]
+        public async Task<ActionResult<CommentDto>> AddComment(
+            string ticketNumber,
+            AddCommentDto dto)
         {
             var comment = new ComplaintComments
             {
                 CommentText = dto.CommentText,
-                CommentedBy = dto.CommentedBy ?? "Anonymous"
             };
 
-            var created = await _complaintService.AddComment(id, comment);
+            var created =
+                await _complaintService.AddCommentByTicket(ticketNumber, comment);
 
             return Ok(new CommentDto
             {
-                CommentId = created.CommentId,
                 CommentText = created.CommentText,
-                CommentedBy = created.CommentedBy,
                 CommentedOn = created.CommentedOn
             });
         }
 
-
-        // DELETE: api/complaints/{id} - Delete complaint (Admin)
+        // ===============================
+        // UPDATE STATUS (ADMIN ONLY)
+        // ===============================
         [Authorize(Roles = "Admin")]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteComplaint(int id)
+        [HttpPut("track/{ticketNumber}/status")]
+        public async Task<ActionResult<ComplaintResponseDto>> UpdateStatus(
+            string ticketNumber,
+            [FromBody] string status)
         {
-            var deleted = await _complaintService.DeleteComplaint(id);
-            if (!deleted) return NotFound();
+            var complaint =
+                await _complaintService.UpdateComplaintStatusByTicket(
+                    ticketNumber,
+                    status);
+
+            if (complaint == null)
+                return NotFound();
+
+            return Ok(MapToResponseDto(complaint));
+        }
+
+        // ===============================
+        // DELETE COMPLAINT (ADMIN ONLY)
+        // ===============================
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("track/{ticketNumber}")]
+        public async Task<IActionResult> DeleteComplaint(string ticketNumber)
+        {
+            var deleted =
+                await _complaintService.DeleteByTicket(ticketNumber);
+
+            if (!deleted)
+                return NotFound();
 
             return NoContent();
         }
 
-        // Helper method to map Complaint to ComplaintResponseDto
+        // ===============================
+        // ANALYTICS (ADMIN)
+        // ===============================
+        [Authorize(Roles = "Admin")]
+        [HttpGet("analytics")]
+        public async Task<ActionResult<ComplaintAnalyticsDto>> Analytics()
+        {
+            return Ok(await _complaintService.GetAnalytics());
+        }
+
+
         private ComplaintResponseDto MapToResponseDto(Complaint complaint)
         {
             return new ComplaintResponseDto
             {
-                ComplaintId = complaint.ComplaintId,
                 TicketNumber = complaint.TicketNumber,
                 Category = complaint.Category,
                 Description = complaint.Description,
@@ -140,14 +145,11 @@ namespace ECanopy.Controllers
                 UpdatedOn = complaint.UpdatedOn,
                 Comments = complaint.Comments.Select(c => new CommentDto
                 {
-                    CommentId = c.CommentId,
                     CommentText = c.CommentText,
-                    CommentedBy = c.CommentedBy,
                     CommentedOn = c.CommentedOn
                 }).ToList(),
                 Attachments = complaint.Attachments.Select(a => new AttachmentDto
                 {
-                    AttachmentId = a.AttachmentId,
                     FileName = a.FileName,
                     FilePath = a.FilePath,
                     FileType = a.FileType,

@@ -1,11 +1,16 @@
 ﻿using ECanopy.Common;
 using ECanopy.Data;
+using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECanopy.Services
 {
+    public interface IRoleRequestService
+    {
+        Task CreateAsync(string userId, RoleRequestDto dto);
+        Task<IEnumerable<RoleRequest>> GetMyAsync(string userId);
+    }
     public class RoleRequestService: IRoleRequestService
     {
         private readonly ApplicationDbContext _context;
@@ -15,20 +20,25 @@ namespace ECanopy.Services
             _context = context;
         }
 
-        public async Task CreateAsync(string userId, string role, int societyId)
+        public async Task CreateAsync(string userId, RoleRequestDto dto)
         {
-            bool pending = await _context.RoleRequests.AnyAsync(r =>
+            bool hasPending = await _context.RoleRequests.AnyAsync(r =>
                 r.UserId == userId && r.Status == "Pending");
 
-            if (pending)
+            if (hasPending)
                 throw new BusinessException("Role request already pending");
+
+            bool alreadyRwa = await _context.RwaMembers.AnyAsync(r =>
+                r.UserId == userId && r.IsActive);
+
+            if (alreadyRwa)
+                throw new BusinessException("User is already an RWA member");
 
             var request = new RoleRequest
             {
                 UserId = userId,
-                RequestedRole = role,
-                SocietyId = societyId,
                 Status = "Pending",
+                RequestedRole=dto.RequestedRole,
                 RequestedAt = DateTime.UtcNow
             };
 
@@ -43,5 +53,6 @@ namespace ECanopy.Services
                 .OrderByDescending(r => r.RequestedAt)
                 .ToListAsync();
         }
+
     }
 }

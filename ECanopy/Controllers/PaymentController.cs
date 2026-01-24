@@ -1,6 +1,7 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,107 +12,57 @@ namespace ECanopy.Controllers
     [ApiController]
     [Route("api/payments")]
     [Authorize]
-    public class PaymentController : RwaController
+    public class PaymentController : ControllerBase
     {
-        public PaymentController(ApplicationDbContext context)
-            : base(context)
+        private readonly IPaymentService _paymentService;
+        private readonly ApplicationDbContext _context;
+
+        public PaymentController(
+            ApplicationDbContext context,
+            IPaymentService paymentService)
         {
+            _context = context;
+            _paymentService = paymentService;
         }
 
+        
         [Authorize(Roles = "Resident")]
         [HttpPost]
         public async Task<IActionResult> MakePayment(CreatePaymentDto dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            var resident = await _context.Residents
-                .FirstOrDefaultAsync(r => r.UserId == userId);
+            var result = await _paymentService.PayAsync(userId, dto);
 
-            if (resident == null)
-                return BadRequest("Resident profile not found");
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-            var bill = await _context.MaintainanceBills
-                .FirstOrDefaultAsync(b => b.MaintainanceBillId == dto.MaintainanceBillId);
-
-            if (bill == null)
-                return BadRequest("Invalid bill");
-
-            if (bill.IsPaid)
-                return Conflict("Bill has already been paid");
-
-            if (resident.FlatId != bill.FlatId)
-                return Forbid("You cannot pay a bill for another flat");
-
-            var payment = new Payment
-            {
-                MaintainanceBillId = bill.MaintainanceBillId,
-                Amount = bill.Amount,
-                PaymentType = dto.PaymentType,
-                PaymentDate = DateTime.UtcNow,
-                ResidentId = resident.ResidentId
-            };
-
-            bill.IsPaid = true;
-
-            _context.Payments.Add(payment);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            return Ok(new PaymentResponseDto
-            {
-                Amount = payment.Amount,
-                PaymentType = payment.PaymentType,
-                PaymentDate = payment.PaymentDate
-            });
+            return Ok(result);
         }
 
+        
         [Authorize(Roles = "Resident")]
         [HttpGet("my")]
-        public IActionResult MyPayment()
+        public async Task<IActionResult> MyPayments()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            var resident = _context.Residents
-                .FirstOrDefault(r => r.UserId == userId);
+            var result = await _paymentService.MyAsync(userId);
 
-            if (resident == null)
-                return BadRequest("Resident profile not found");
-
-            if (!resident.IsOwner)
-                return Forbid("Only flat owner can view payments");
-
-            var payments = _context.Payments
-                .Where(p => p.MaintainanceBill.ResidentId == resident.ResidentId)
-                .Select(p => new PaymentResponseDto
-                {
-                    Amount = p.Amount,
-                    PaymentType = p.PaymentType,
-                    PaymentDate = p.PaymentDate
-                });
-
-            return Ok(payments);
+            return Ok(result);
         }
 
+        
         [Authorize(Roles = "RWA_Treasurer")]
         [HttpGet]
         public async Task<IActionResult> AllPayments()
         {
-            await LoadRwaContextAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            var payments = await _context.Payments
-                .Where(p =>
-                    p.MaintainanceBill.Flat.Building.SocietyId == RwaSocietyId)
-                .Select(p => new PaymentResponseDto
-                {
-                    Amount = p.Amount,
-                    PaymentType = p.PaymentType,
-                    PaymentDate = p.PaymentDate
-                })
-                .ToListAsync();
+            var rwa = await _context.RwaMembers
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.IsActive)
+                ?? throw new UnauthorizedAccessException();
 
-            return Ok(payments);
+            var result = await _paymentService.AllAsync(rwa.SocietyId!.Value);
+
+            return Ok(result);
         }
     }
 }

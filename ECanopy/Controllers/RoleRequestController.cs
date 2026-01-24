@@ -1,4 +1,5 @@
-﻿using ECanopy.Services.Interfaces;
+﻿using ECanopy.DTO;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -7,6 +8,7 @@ namespace ECanopy.Controllers
 {
     [ApiController]
     [Route("api/role-requests")]
+    [Authorize(Roles = "Resident")]
     public class RoleRequestController : ControllerBase
     {
         private readonly IRoleRequestService _service;
@@ -16,27 +18,25 @@ namespace ECanopy.Controllers
             _service = service;
         }
 
-        [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create(
-            string role,
-            int societyId)
+        public async Task<IActionResult> Create(RoleRequestDto dto)
         {
-            await _service.CreateAsync(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!,
-                role,
-                societyId);
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            return Ok();
+            await _service.CreateAsync(userId, dto);
+
+            return Ok(new { message = "Role request submitted" });
         }
 
-        [Authorize]
         [HttpGet("my")]
         public async Task<IActionResult> My()
         {
-            return Ok(await _service.GetMyAsync(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!));
-        }
-    }
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
+            return Ok(await _service.GetMyAsync(userId));
+        }
+
+    }
 }

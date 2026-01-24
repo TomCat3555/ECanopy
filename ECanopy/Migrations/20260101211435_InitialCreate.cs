@@ -72,38 +72,6 @@ namespace ECanopy.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Complaints",
-                columns: table => new
-                {
-                    ComplaintId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    TicketNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Category = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Priority = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ContactName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ContactPhone = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ContactEmail = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    AssignedTo = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Complaints", x => x.ComplaintId);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "Notices",
                 columns: table => new
                 {
@@ -278,15 +246,11 @@ namespace ECanopy.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UserId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    RequestedRole = table.Column<string>(type: "longtext", nullable: false)
+                    RequestedRole = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    SocietyId = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "longtext", nullable: false)
+                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ReviewedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ReviewedByUserId = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -296,59 +260,6 @@ namespace ECanopy.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ComplaintAttachments",
-                columns: table => new
-                {
-                    AttachmentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    ComplaintId = table.Column<int>(type: "int", nullable: false),
-                    FileName = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FilePath = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FileType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    UploadedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ComplaintAttachments", x => x.AttachmentId);
-                    table.ForeignKey(
-                        name: "FK_ComplaintAttachments_Complaints_ComplaintId",
-                        column: x => x.ComplaintId,
-                        principalTable: "Complaints",
-                        principalColumn: "ComplaintId",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ComplaintComments",
-                columns: table => new
-                {
-                    CommentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    ComplaintId = table.Column<int>(type: "int", nullable: false),
-                    CommentText = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CommentedBy = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CommentedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ComplaintComments", x => x.CommentId);
-                    table.ForeignKey(
-                        name: "FK_ComplaintComments_Complaints_ComplaintId",
-                        column: x => x.ComplaintId,
-                        principalTable: "Complaints",
-                        principalColumn: "ComplaintId",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -384,7 +295,7 @@ namespace ECanopy.Migrations
                     UserId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SocietyId = table.Column<int>(type: "int", nullable: true),
-                    Role = table.Column<string>(type: "longtext", nullable: false)
+                    Role = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
@@ -493,6 +404,52 @@ namespace ECanopy.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Complaints",
+                columns: table => new
+                {
+                    ComplaintId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TicketNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FlatId = table.Column<int>(type: "int", nullable: false),
+                    Category = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Priority = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContactName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContactPhone = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContactEmail = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedOn = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    AssignedTo = table.Column<int>(type: "int", nullable: true),
+                    ResidentId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Complaints", x => x.ComplaintId);
+                    table.ForeignKey(
+                        name: "FK_Complaints_Flats_FlatId",
+                        column: x => x.FlatId,
+                        principalTable: "Flats",
+                        principalColumn: "FlatId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Complaints_Residents_ResidentId",
+                        column: x => x.ResidentId,
+                        principalTable: "Residents",
+                        principalColumn: "ResidentId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "MaintainanceBills",
                 columns: table => new
                 {
@@ -518,6 +475,59 @@ namespace ECanopy.Migrations
                         column: x => x.ResidentId,
                         principalTable: "Residents",
                         principalColumn: "ResidentId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ComplaintAttachments",
+                columns: table => new
+                {
+                    AttachmentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    ComplaintId = table.Column<int>(type: "int", nullable: false),
+                    FileName = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FilePath = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FileType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    UploadedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ComplaintAttachments", x => x.AttachmentId);
+                    table.ForeignKey(
+                        name: "FK_ComplaintAttachments_Complaints_ComplaintId",
+                        column: x => x.ComplaintId,
+                        principalTable: "Complaints",
+                        principalColumn: "ComplaintId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ComplaintComments",
+                columns: table => new
+                {
+                    CommentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    ComplaintId = table.Column<int>(type: "int", nullable: false),
+                    CommentText = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CommentedByUserId = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CommentedOn = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ComplaintComments", x => x.CommentId);
+                    table.ForeignKey(
+                        name: "FK_ComplaintComments_Complaints_ComplaintId",
+                        column: x => x.ComplaintId,
+                        principalTable: "Complaints",
+                        principalColumn: "ComplaintId",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -606,6 +616,16 @@ namespace ECanopy.Migrations
                 column: "ComplaintId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Complaints_FlatId",
+                table: "Complaints",
+                column: "FlatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Complaints_ResidentId",
+                table: "Complaints",
+                column: "ResidentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Complaints_TicketNumber",
                 table: "Complaints",
                 column: "TicketNumber",
@@ -644,7 +664,9 @@ namespace ECanopy.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ResidentJoinRequests_UserId",
                 table: "ResidentJoinRequests",
-                column: "UserId");
+                column: "UserId",
+                unique: true,
+                filter: "[Status] = 'Pending'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Residents_FlatId",
@@ -654,7 +676,8 @@ namespace ECanopy.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Residents_UserId",
                 table: "Residents",
-                column: "UserId");
+                column: "UserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoleRequests_UserId",
@@ -662,14 +685,16 @@ namespace ECanopy.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RwaMembers_SocietyId",
+                name: "IX_RwaMembers_SocietyId_Role",
                 table: "RwaMembers",
-                column: "SocietyId");
+                columns: new[] { "SocietyId", "Role" },
+                unique: true,
+                filter: "[SocietyId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RwaMembers_UserId_SocietyId",
+                name: "IX_RwaMembers_UserId",
                 table: "RwaMembers",
-                columns: new[] { "UserId", "SocietyId" },
+                column: "UserId",
                 unique: true);
         }
 

@@ -15,8 +15,7 @@ namespace ECanopy.Models
         public string CommentText { get; set; } = string.Empty;
 
         [MaxLength(100)]
-        public string? CommentedBy { get; set; } // Can be admin name or "Anonymous"
-
+        public string? CommentedByUserId { get; set; }
         public DateTime CommentedOn { get; set; } = DateTime.UtcNow;
     }
 }

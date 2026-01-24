@@ -10,11 +10,11 @@ namespace ECanopy.Models
         public string UserId { get; set; } = null!;
 
         [ForeignKey(nameof(UserId))]
-        public ApplicationUser User { get; set; }
+        public ApplicationUser User { get; set; } = null!;
         public int FlatId { get; set; }
         public string Status { get; set; } = "Pending";
 
         [ForeignKey(nameof(FlatId))]
-        public Flat Flat { get; set; }
+        public Flat Flat { get; set; } = null!;
     }
 }

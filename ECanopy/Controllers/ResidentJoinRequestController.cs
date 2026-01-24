@@ -1,7 +1,7 @@
 ﻿using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Services.Interfaces;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,25 +12,25 @@ namespace ECanopy.Controllers
 {
     [ApiController]
     [Route("api/join-requests")]
+    [Authorize(Roles = "Resident")]
     public class ResidentJoinRequestController : ControllerBase
     {
         private readonly IResidentJoinRequestService _service;
 
-        public ResidentJoinRequestController(
-            IResidentJoinRequestService service)
+        public ResidentJoinRequestController(IResidentJoinRequestService service)
         {
             _service = service;
         }
 
-        [Authorize(Roles = "Resident")]
         [HttpPost]
         public async Task<IActionResult> Create(ResidentJoinRequestDto dto)
         {
-            await _service.CreateAsync(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!,
-                dto);
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            return Ok();
+            await _service.CreateAsync(userId, dto);
+
+            return Ok(new { message = "Join request submitted" });
         }
     }
 

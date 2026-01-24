@@ -1,7 +1,8 @@
-﻿using ECanopy.Data;
+﻿/*
+using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Services.Interfaces;
+using ECanopy.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace ECanopy.Controllers
 {
     [ApiController]
     [Route("api/residents")]
+    [Authorize(Roles = "Resident")]
     public class ResidentOnboardingController : ControllerBase
     {
         private readonly IResidentOnboardingService _service;
@@ -21,13 +23,17 @@ namespace ECanopy.Controllers
             _service = service;
         }
 
-        [Authorize(Roles = "Resident")]
         [HttpPost("onboard")]
         public async Task<IActionResult> Onboard(CreateResidentDto dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            return Ok(await _service.CreateAsync(userId!, dto));
+            // Controller does NOT trust any IDs in dto
+            var result = await _service.CreateAsync(userId, dto);
+
+            return Ok(result);
         }
     }
 }
+*/

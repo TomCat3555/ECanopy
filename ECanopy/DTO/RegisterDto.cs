@@ -1,9 +1,14 @@
-﻿namespace ECanopy.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ECanopy.DTO
 {
     public class RegisterDto
     {
-        public string Email {  get; set; }
-        public string Password { get; set; }
-        public string FullName { get; set; }
+        [Required]
+        public string Email { get; set; } = null!;
+        [Required]
+        public string Password { get; set; } = null!;
+        [Required]
+        public string FullName { get; set; } = null!;
     }
 }

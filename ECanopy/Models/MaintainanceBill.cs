@@ -11,11 +11,10 @@ namespace ECanopy.Models
         public DateTime DueDate { get; set; }
         public bool IsPaid { get; set; }
         public int ResidentId { get; set; }
-
         [ForeignKey(nameof(ResidentId))]
-        public Resident Resident { get; set; }
+        public Resident? Resident { get; set; }
         public int FlatId {  get; set; }
         [ForeignKey(nameof(FlatId))]
-        public Flat Flat {get; set; }
+        public Flat Flat { get; set; } = null!;
     }
 }
