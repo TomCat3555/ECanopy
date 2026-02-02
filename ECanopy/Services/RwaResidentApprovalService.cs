@@ -57,7 +57,7 @@ namespace ECanopy.Services
             if (request.Flat.Building.SocietyId != societyId)
                 throw new ForbiddenException("Unauthorized approval");
 
-            await _onboardingService.OnboardAsync(request);
+            await _onboardingService.OnboardAsync(request,request.User.FullName);
         }
 
         public async Task RejectAsync(int societyId, string userEmail)

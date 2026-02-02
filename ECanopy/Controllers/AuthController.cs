@@ -33,8 +33,20 @@ namespace ECanopy.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            await _authService.LoginAsync(dto);
-            return Ok(new { message = "Login successful" });
+            var token = await _authService.LoginAsync(dto);
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                token,
+                user = new
+                {
+                    email = user.Email,
+                    fullName = user.FullName,
+                    roles
+                }
+            });
         }
 
         [Authorize]
@@ -52,14 +64,6 @@ namespace ECanopy.Controllers
                 email = user.Email,
                 roles = roles 
             });
-        }
-
-        [Authorize]
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
-        {
-            await _authService.LogoutAsync();
-            return Ok();
         }
     }
 }

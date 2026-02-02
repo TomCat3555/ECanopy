@@ -71,7 +71,10 @@ namespace ECanopy.Controllers
             if (request.Flat.Building.SocietyId != RwaSocietyId)
                 throw new ForbiddenException("Unauthorized");
 
-            var result = await _onboardingService.OnboardAsync(request);
+            string fullName = request.User.FullName
+                ?? throw new BusinessException("Resident full name not found");
+
+            var result = await _onboardingService.OnboardAsync(request,fullName);
 
             return Ok(result);
         }

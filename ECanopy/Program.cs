@@ -3,12 +3,15 @@ using ECanopy.Data;
 using ECanopy.Data.Seed;
 using ECanopy.Models;
 using ECanopy.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,14 +34,21 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-
-builder.Services.AddAuthorization();
-
-
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options => {
         options.SuppressModelStateInvalidFilter = false;
         });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5138")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -48,6 +58,7 @@ builder.Services.AddScoped<IFlatService, FlatService>();
 builder.Services.AddScoped<IComplaintService, ComplaintService>();
 builder.Services.AddScoped<IMaintainanceBillService, MaintainanceBillService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
+builder.Services.AddScoped<IOwnershipRequestService, OwnershipRequestService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IRoleRequestService, RoleRequestService>();
 builder.Services.AddScoped<IRwaResidentApprovalService, RwaResidentApprovalService>();
@@ -67,7 +78,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Society Management System"
     });
 
-    /*
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -92,8 +102,31 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-    */
     });
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+builder.Services
+.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings["Key"])
+        )
+    };
+});
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -139,7 +172,8 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled for development
+app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 

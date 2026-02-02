@@ -9,7 +9,7 @@ namespace ECanopy.Services
 {
     public interface IResidentOnboardingService
     {
-        Task<ResidentResponseDto> OnboardAsync(ResidentJoinRequest request);
+        Task<ResidentResponseDto> OnboardAsync(ResidentJoinRequest request,string fullName);
 
     }
     public class ResidentOnboardingService : IResidentOnboardingService
@@ -21,7 +21,7 @@ namespace ECanopy.Services
             _context = context;
         }
 
-        public async Task<ResidentResponseDto> OnboardAsync(ResidentJoinRequest request)
+        public async Task<ResidentResponseDto> OnboardAsync(ResidentJoinRequest request , string fullName)
         {
             bool alreadyResident = await _context.Residents
                 .AnyAsync(r => r.UserId == request.UserId);
@@ -37,15 +37,23 @@ namespace ECanopy.Services
             if (flat == null)
                 throw new BusinessException("Flat no longer exists");
 
+            int currentResidentCount = await _context.Residents
+                .CountAsync(r => r.FlatId == flat.FlatId);
+
+            if (currentResidentCount >= flat.MaxResident)
+                throw new BusinessException("Flat has reached maximum resident capacity");
+
             var resident = new Resident
             {
-                FullName = request.User.FullName,
+                FullName = fullName,
                 UserId = request.UserId,
                 FlatId = request.FlatId,
                 IsOwner = false
             };
 
             _context.Residents.Add(resident);
+
+            flat.IsOccupied = true;
 
             request.Status = "Approved";
 

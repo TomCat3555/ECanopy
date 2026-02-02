@@ -28,6 +28,8 @@ namespace ECanopy.Data
         public DbSet<Complaint> Complaints { get; set; } = null!;
         public DbSet<ComplaintComments> ComplaintComments { get; set; } = null!;
         public DbSet<ComplaintAttachment> ComplaintAttachments { get; set; } = null!;
+        public DbSet<OwnershipRequest> OwnershipRequests { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -53,7 +55,24 @@ namespace ECanopy.Data
                 .IsUnique()
                 .HasFilter("[SocietyId] IS NOT NULL");
 
+            modelBuilder.Entity<Society>()
+                .OwnsOne(s => s.Address, a =>
+                {
+                    a.Property(p => p.State)
+                    .HasConversion<string>();
+                });
 
+            modelBuilder.Entity<OwnershipRequest>()
+                .HasOne(o => o.Resident)
+                .WithMany()
+                .HasForeignKey(o => o.ResidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OwnershipRequest>()
+                .HasOne(o => o.Flat)
+                .WithMany()
+                .HasForeignKey(o => o.FlatId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Resident>()
                 .HasIndex(r => r.UserId)

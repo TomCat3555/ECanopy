@@ -85,9 +85,9 @@ namespace ECanopy.Controllers
         }
 
         // ===============================
-        // UPDATE STATUS (ADMIN ONLY)
+        // UPDATE STATUS (RWA ONLY)
         // ===============================
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "RWA_President,RWA_Secretary")]
         [HttpPut("track/{ticketNumber}/status")]
         public async Task<ActionResult<ComplaintResponseDto>> UpdateStatus(
             string ticketNumber,
@@ -105,9 +105,9 @@ namespace ECanopy.Controllers
         }
 
         // ===============================
-        // DELETE COMPLAINT (ADMIN ONLY)
+        // DELETE COMPLAINT (RWA ONLY)
         // ===============================
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "RWA_President,RWA_Secretary")]
         [HttpDelete("track/{ticketNumber}")]
         public async Task<IActionResult> DeleteComplaint(string ticketNumber)
         {
@@ -121,9 +121,9 @@ namespace ECanopy.Controllers
         }
 
         // ===============================
-        // ANALYTICS (ADMIN)
+        // ANALYTICS (RWA)
         // ===============================
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "RWA_President,RWA_Secretary,RWA_Treasurer")]
         [HttpGet("analytics")]
         public async Task<ActionResult<ComplaintAnalyticsDto>> Analytics()
         {

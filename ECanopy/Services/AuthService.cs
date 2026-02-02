@@ -1,27 +1,29 @@
-﻿using ECanopy.DTO;
+﻿using ECanopy.Common;
+using ECanopy.DTO;
 using ECanopy.Models;
-using ECanopy.Common;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 namespace ECanopy.Services
 {
     public interface IAuthService
     {
         Task RegisterAsync(RegisterDto dto);
-        Task LoginAsync(LoginDto dto);
-        Task LogoutAsync();
+        Task<string> LoginAsync(LoginDto dto);
     }
+
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IConfiguration _config;
 
-        public AuthService(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration config)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
+            _config = config;
         }
 
         // ===============================
@@ -41,7 +43,12 @@ namespace ECanopy.Services
 
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
+            {
+                var errors = string.Join("; ",
+                    result.Errors.Select(e => e.Description));
+
                 throw new BusinessException("Registration failed");
+            }
 
             // Every new user is a Resident by default
             await _userManager.AddToRoleAsync(user, "Resident");
@@ -50,22 +57,57 @@ namespace ECanopy.Services
         // ===============================
         // LOGIN
         // ===============================
-        public async Task LoginAsync(LoginDto dto)
+        public async Task<string> LoginAsync(LoginDto dto)
         {
-            var result = await _signInManager.PasswordSignInAsync(
-                dto.Email,
-                dto.Password,
-                false,
-                false);
-
-            if (!result.Succeeded)
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                Console.WriteLine("LOGIN FAIL → USER NOT FOUND");
                 throw new BusinessException("Invalid credentials");
+            }
+
+            var valid = await _userManager.CheckPasswordAsync(user, dto.Password);
+            if (!valid)
+            {
+                Console.WriteLine("LOGIN FAIL → USER NOT FOUND");
+                throw new BusinessException("Invalid credentials");
+            }
+
+            return await GenerateJwtToken(user);
         }
 
-        public async Task LogoutAsync()
+        // ===============================
+        // GENERATE JWT
+        // ===============================
+        private async Task<string> GenerateJwtToken(ApplicationUser user)
         {
-            await _signInManager.SignOutAsync();
-        }
+            var roles = await _userManager.GetRolesAsync(user);
 
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.FullName)
+            };
+
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_config["Jwt:Key"])
+            );
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }

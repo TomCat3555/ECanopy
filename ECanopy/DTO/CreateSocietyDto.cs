@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ECanopy.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace ECanopy.DTO
 {
@@ -6,7 +7,11 @@ namespace ECanopy.DTO
     {
         [Required]
         public string SocietyName { get; set; } = null!;
+        
         [Required]
-        public string Address { get; set; } = null!;
+        public string? SocietyDescription { get; set; } = null!;
+        
+        [Required]
+        public Address Address { get; set; } = null!;
     }
 }

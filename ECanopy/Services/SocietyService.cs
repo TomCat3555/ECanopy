@@ -3,6 +3,7 @@ using ECanopy.Data;
 using ECanopy.DTO;
 using ECanopy.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Sockets;
 
 namespace ECanopy.Services
 {
@@ -49,18 +50,20 @@ namespace ECanopy.Services
             var society = new Society
             {
                 SocietyName = dto.SocietyName,
+                SocietyDescription = dto.SocietyDescription,
                 Address = dto.Address
             };
 
             _context.Societies.Add(society);
-            await _context.SaveChangesAsync();
 
-            rwaMember.SocietyId = society.SocietyId;
+            rwaMember.Society = society;
+
             await _context.SaveChangesAsync();
 
             return new SocietyResponseDto
             {
                 SocietyName = society.SocietyName,
+                SocietyDescription = society.SocietyDescription,
                 Address = society.Address
             };
         }
@@ -68,10 +71,12 @@ namespace ECanopy.Services
         public async Task<IEnumerable<SocietyResponseDto>> GetAllAsync()
         {
             return await _context.Societies
+                .AsNoTracking()
                 .OrderBy(s => s.SocietyName)
                 .Select(s => new SocietyResponseDto
                 {
                     SocietyName = s.SocietyName,
+                    SocietyDescription = s.SocietyDescription,
                     Address = s.Address
                 })
                 .ToListAsync();

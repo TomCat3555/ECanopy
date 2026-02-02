@@ -53,12 +53,14 @@ namespace ECanopy.Services
                     f.BuildingId == building.BuildingId)
                 ?? throw new NotFoundException("Flat not found");
 
-            if (!flat.IsOccupied)
-                throw new BusinessException("Flat is not occupied");
+            var resident = await _context.Residents
+                .FirstOrDefaultAsync(r => r.FlatId == flat.FlatId)
+                ?? throw new BusinessException("Flat is not occupied");
 
             var bill = new MaintainanceBill
             {
                 FlatId = flat.FlatId,
+                ResidentId = resident.ResidentId,
                 Amount = dto.Amount,
                 DueDate = dto.DueDate,
                 IsPaid = false

@@ -26,6 +26,7 @@ namespace ECanopy.Services
         public async Task<IEnumerable<SocietyResponseDto>> GetSocietiesAsync()
         {
             return await _context.Societies
+                .AsNoTracking()
                 .OrderBy(s => s.SocietyName)
                 .Select(s => new SocietyResponseDto
                 {
@@ -37,8 +38,12 @@ namespace ECanopy.Services
 
         public async Task<IEnumerable<BuildingResponseDto>> GetBuildingsAsync(string societyName)
         {
+            societyName = societyName.Trim().ToLower();
+
             return await _context.Buildings
-                .Where(b => b.Society.SocietyName == societyName)
+                .AsNoTracking()
+                .Where(b =>
+                    b.Society.SocietyName.ToLower() == societyName)
                 .OrderBy(b => b.BuildingName)
                 .Select(b => new BuildingResponseDto
                 {
@@ -51,14 +56,18 @@ namespace ECanopy.Services
             string societyName,
             string buildingName)
         {
+            societyName = societyName.Trim().ToLower();
+            buildingName = buildingName.Trim().ToLower();
+
             return await _context.Flats
+                .AsNoTracking()
                 .Where(f =>
-                    f.Building.BuildingName == buildingName &&
-                    f.Building.Society.SocietyName == societyName)
+                    f.Building.BuildingName.ToLower() == buildingName &&
+                    f.Building.Society.SocietyName.ToLower() == societyName)
                 .OrderBy(f => f.FlatNumber)
                 .Select(f => new FlatResponseDto
                 {
-                    FlatNumber = f.FlatNumber,
+                    FlatNumber = f.FlatNumber
                 })
                 .ToListAsync();
         }
